@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Agent42labs Chatbot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script>
+    // Optional: override API; otherwise auto-uses http://<host>:5000
+    window.__API_BASE__ = "http://127.0.0.1:5000";
+  </script>
+  <style>
+    :root{
+      --bg:#f6f7fb; --card:#ffffff; --panel:#f9fafb; --text:#0f172a; --muted:#64748b; --border:#e5e7eb; --soft:#f3f4f6;
+      --accent:#98c319; --accent-600:#84cc16; --accent-100:#ecfccb;
+      --bot-bubble:#e6f7c9; --user-bubble:#ffffff;
+      --radius-outer:26px; --radius:16px; --shadow:0 18px 40px rgba(2,6,23,.08);
+      --ctl-h: 42px; --ctl-r: 12px;
+    }
+    *{box-sizing:border-box} html,body{height:100%}
+    body{ margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial; color:var(--text);
+      background:
+        radial-gradient(1200px 700px at -20% -10%, rgba(163,230,53,.18), transparent 45%),
+        radial-gradient(1100px 600px at 120% -10%, rgba(132,204,22,.12), transparent 50%),
+        linear-gradient(180deg, #f8fafc, var(--bg)); }
+    .wrap{ max-width:420px; margin:28px auto; padding:0 14px; }
+    .phone{ background: var(--card); border:1px solid var(--border); border-radius: var(--radius-outer); box-shadow: var(--shadow); overflow: hidden; }
+    .topbar{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px;
+      background: linear-gradient(180deg, #ffffff, #fafafa); border-bottom:1px solid var(--border); }
+    .brand{ display:flex; align-items:center; gap:10px; font-weight:700; }
+    .logo-box{ width:26px; height:26px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;
+      background: linear-gradient(135deg, var(--accent), var(--accent-600)); box-shadow: 0 0 0 6px rgba(163,230,53,.18); overflow:hidden; }
+    .logo-img{ width:80%; height:80%; object-fit:contain; display:block; }
+    .icon-btn{ border:1px solid var(--border); background:#fff; color:var(--muted); padding:8px 10px; border-radius:12px; cursor:pointer; }
+    .icon-btn:hover{ color:var(--text); border-color:#d1d5db; }
+
+    .home{ padding:18px 16px 12px; background: linear-gradient(180deg, #fff, #fbfbfb); }
+    .hi{ font-size:28px; font-weight:800; letter-spacing:.2px; }
+    .subtitle{ color:var(--muted); margin-top:4px; font-size:13px; }
+    .cards{ margin-top:14px; display:flex; flex-direction:column; gap:10px; }
+    .card{ background:#fff; border:1px solid var(--border); border-radius:16px; padding:12px 14px; cursor:pointer;
+      display:flex; justify-content:space-between; align-items:center; }
+    .card:hover{ border-color:#d1d5db; background:#fefefe; }
+    .card .t{ font-weight:700; }
+    .card .s{ color:var(--muted); font-size:12.5px; margin-top:4px; }
+
+    .panel{ display:none; background:var(--panel); border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+      min-height:56vh; max-height:60vh; overflow-y:auto; padding:12px; scroll-behavior:smooth; }
+    .msg{ display:flex; gap:10px; margin:10px 0; } .msg.user{ justify-content:flex-end; }
+    .av{ width:28px;height:28px;border-radius:50%;flex:0 0 auto; display:flex; align-items:center; justify-content:center;
+      background: linear-gradient(135deg, var(--accent), var(--accent-600)); color:#0b1a07; font-size:12px; font-weight:800; }
+    .av.user{ background:#111827; color:#fff; }
+    .bubble{ max-width:78%; padding:12px 14px; border-radius:16px; line-height:1.6; border:1px solid var(--border);
+      white-space:pre-wrap; word-wrap:break-word; font-size:14.5px; box-shadow: 0 2px 10px rgba(2,6,23,.03); }
+    .bubble.user{ background: var(--user-bubble); }
+    .bubble.bot{ background: var(--bot-bubble); border-color:#dbeafe; }
+    .meta{ margin-top:8px; display:flex; gap:8px; align-items:center; color:var(--muted); font-size:11.5px; flex-wrap:wrap; }
+    .pill{ display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px; font-size:11.5px; background:#f1f5f9; border:1px solid var(--border); color:#475569; }
+    .pill a{ color:#0ea5e9; text-decoration:none; }
+    .act{ margin-left:auto; display:flex; gap:6px; }
+    .act button{ background:#fff; color:#475569; border:1px solid var(--border); padding:4px 8px; border-radius:10px; font-size:11.5px; cursor:pointer; }
+    .act button:hover{ color:#111827; border-color:#d1d5db; }
+    .typing{ display:inline-flex; gap:5px; margin-left:6px; vertical-align:middle; }
+    .typing span{ width:6px;height:6px; background:#cbd5e1; border-radius:50%; animation:pulse 1.2s infinite ease-in-out; }
+    .typing span:nth-child(2){ animation-delay:.15s } .typing span:nth-child(3){ animation-delay:.30s }
+    @keyframes pulse{ 0%,80%,100%{opacity:.25} 40%{opacity:1} }
+
+    .composer{ display:flex; gap:8px; padding:12px; align-items:flex-end; background: linear-gradient(180deg, #fafafa, #f7f7f7); }
+    .input{ flex:1; display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:16px; border:1px solid var(--border); background:#fff; }
+    .input textarea{ width:100%; resize:none; border:none; outline:none; background:transparent; color:var(--text); max-height:100px; font-size:15px; line-height:1.6; }
+    .send{ background: linear-gradient(135deg, var(--accent), var(--accent-600)); color:#0b1a07; border:1px solid #d6f3a6;
+      padding:10px 16px; border-radius:16px; font-weight:700; cursor:pointer; box-shadow: 0 10px 24px rgba(163,230,53,.25); }
+
+    /* Professional toolbar */
+    .toolbar.pro{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px; border-top:1px solid var(--border);
+      background:#fff; flex-wrap:wrap; }
+    .toolbar-left{ display:flex; align-items:center; gap:10px; flex:1 1 auto; min-width:240px; }
+    .toolbar-right{ display:flex; align-items:center; gap:10px; flex:0 0 auto; }
+    .toolbar .label{ color:var(--muted); font-size:13px; margin-right:2px; }
+    .field{ position:relative; }
+    .sel{ height:var(--ctl-h); line-height:calc(var(--ctl-h) - 2px); padding:0 12px; border:1px solid var(--border); border-radius:var(--ctl-r);
+      background:#fff; color:var(--text); min-width:150px; appearance:none; outline:none; }
+    .sel:focus{ border-color:#d4f0a1; box-shadow:0 0 0 3px #ecfccb; }
+    .btn-save{ height:var(--ctl-h); padding:0 16px; border-radius:var(--ctl-r); border:1px solid #d6f3a6;
+      background: linear-gradient(135deg, var(--accent), var(--accent-600)); color:#0b1a07; font-weight:700; cursor:pointer; box-shadow:0 8px 22px rgba(163,230,53,.20); }
+    .btn-ghost{ height:var(--ctl-h); padding:0 14px; border-radius:var(--ctl-r); border:1px solid var(--border); background:#fff; color:#475569; cursor:pointer; }
+    .btn-ghost:hover{ border-color:#d1d5db; color:#111827; }
+    @media (max-width:520px){ .toolbar-left{ flex:1 1 100%; } .toolbar-right{ width:100%; justify-content:flex-end; } }
+
+    .toast{ position:fixed; left:50%; bottom:22px; transform:translateX(-50%); background:#0f172a; color:#fff;
+      padding:10px 14px; border-radius:10px; font-size:12.5px; border:1px solid #0b1220; box-shadow: var(--shadow); opacity:0; transition:.25s; pointer-events:none; }
+    .toast.show{ opacity:1; }
+    a{ color:#0284c7 } ol,ul{ margin:6px 0 6px 18px } code{ background:#f1f5f9; padding:2px 6px; border-radius:6px }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="phone">
+      <div class="topbar">
+        <div class="brand">
+          <div class="logo-box">
+            <img src="assets/logo.svg" alt="Agent42Labs" class="logo-img"
+                 onerror="this.style.display='none'; this.parentElement.textContent='A';" />
+          </div>
+          <div>Agent42labs Chatbot</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="icon-btn" id="newBtn">New</button>
+          <button class="icon-btn" title="Menu">⋯</button>
+        </div>
+      </div>
+
+      <!-- Home (Industries removed) -->
+      <div id="home" class="home">
+        <div class="hi">Hello!</div>
+        <div class="subtitle">How can I help you today?</div>
+
+        <div class="cards" id="cards">
+          <div class="card" data-q="List the services Agent42 Labs provides.">
+            <div><div class="t">Services</div><div class="s">See what we offer</div></div><span>›</span>
+          </div>
+          <div class="card" data-q="How do I contact the team?">
+            <div><div class="t">Contact</div><div class="s">Email and phone</div></div><span>›</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="panel" class="panel"></div>
+
+      <div class="composer">
+        <div class="input"><textarea id="question" rows="1" placeholder="Ask anything…"></textarea></div>
+        <button id="send" class="send">Send</button>
+      </div>
+
+      <div class="toolbar pro">
+        <div class="toolbar-left">
+          <span class="label">Save as</span>
+          <div class="field">
+            <select id="exportFormat" class="sel" aria-label="File format">
+              <option value="pdf">PDF</option>
+              <option value="docx">DOCX</option>
+              <option value="txt">Plain Text</option>
+            </select>
+          </div>
+          <div class="field">
+            <select id="exportScope" class="sel" aria-label="Content scope">
+              <option value="answer" selected>Latest answer</option>
+              <option value="conversation">Full conversation</option>
+            </select>
+          </div>
+        </div>
+        <div class="toolbar-right">
+          <button id="exportBtn" class="btn-save">Save</button>
+          <button id="clearBtn" class="btn-ghost">Clear</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">Copied</div>
+
+  <script>
+    const API_BASE = window.__API_BASE__ || `http://${location.hostname || '127.0.0.1'}:5000`;
+
+    const home = document.getElementById('home');
+    const panel = document.getElementById('panel');
+    const questionInput = document.getElementById('question');
+    const sendBtn = document.getElementById('send');
+    const exportBtn = document.getElementById('exportBtn');
+    const exportFormat = document.getElementById('exportFormat');
+    const exportScope = document.getElementById('exportScope');
+    const clearBtn = document.getElementById('clearBtn');
+    const toast = document.getElementById('toast');
+
+    let chatHistory = [];
+    let failCount = 0;
+    let sending = false;
+    let lastSources = [];  // keep sources from last /chat response
+
+    function showToast(msg='Saved'){ toast.textContent=msg; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),1400); }
+    function escapeHTML(s){ return (s||"").replace(/[&<>"']/g, ch=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[ch])); }
+    function sanitizeAnswer(t){ if(!t) return ""; t=t.replace(/contact us at\s+you can reach us at/gi,"contact us at"); const seen=new Set();
+      return t.split(/\n+/).filter(l=>{const n=l.toLowerCase().replace(/\s+/g," ").trim(); if(!n||seen.has(n)) return false; seen.add(n); return true;}).join("\n"); }
+    function toHTML(t){ t=sanitizeAnswer(t); let h=escapeHTML(t);
+      h=h.replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/_(.+?)_/g,"<i>$1</i>").replace(/`([^`]+)`/g,"<code>$1</code>")
+       .replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>')
+       .replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[A-Za-z]{2,})/g,'<a href="mailto:$1">$1</a>').replace(/\n/g,"<br>"); return h; }
+    function ts(){ const d=new Date(),p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`; }
+    function lastAnswer(){ for(let i=chatHistory.length-1;i>=0;i--){ if(chatHistory[i].role==='assistant') return (chatHistory[i].content||'').trim(); } return ''; }
+    function lastQuestionForLastAnswer(){ // user message right before the last assistant
+      let aiIndex = -1; for (let i=chatHistory.length-1;i>=0;i--) { if (chatHistory[i].role==='assistant'){ aiIndex=i; break; } }
+      if (aiIndex<=0) return (chatHistory[chatHistory.length-1]?.content)||'';
+      for (let i=aiIndex-1;i>=0;i--){ if (chatHistory[i].role==='user') return (chatHistory[i].content||'').trim(); }
+      return (chatHistory[chatHistory.length-1]?.content)||'';
+    }
+    function sanitizeFilename(name){
+      return (name||'answer').toLowerCase()
+        .replace(/[\/\\:*?"<>|]+/g,'')
+        .replace(/\s+/g,'-')
+        .slice(0,80) || 'answer';
+    }
+
+    function ensureChatVisible(){ if(home.style.display!=='none'){ home.style.display='none'; panel.style.display='block'; } }
+
+    function bubbleRow(sender, html, sources){
+      const row=document.createElement('div'); row.className='msg '+sender;
+      const av=document.createElement('div'); av.className='av '+(sender==='bot'?'':'user'); av.textContent=sender==='bot'?'A':'Y';
+      const bub=document.createElement('div'); bub.className='bubble '+(sender==='bot'?'bot':'user'); bub.innerHTML=html;
+      row.appendChild(av); row.appendChild(bub); panel.appendChild(row); panel.scrollTop = panel.scrollHeight;
+
+      if(sender==='bot'){
+        const meta=document.createElement('div'); meta.className='meta';
+        if(Array.isArray(sources) && sources.length){
+          const max=Math.min(3, sources.length);
+          for(let i=0;i<max;i++){
+            const s=sources[i]||{}; const pill=document.createElement('span'); pill.className='pill';
+            const label=[s.section,s.item_title].filter(Boolean).join(' — '); const src=(s.source||'').toString();
+            pill.innerHTML = /^https?:\/\//.test(src) ? `${label?label+' · ':''}<a href="${src}" target="_blank" rel="noopener noreferrer">${src}</a>`
+                                                         : `${label?label+' · ':''}${src}`;
+            meta.appendChild(pill);
+          }
+        }
+        const act=document.createElement('div'); act.className='act';
+        const copyBtn=document.createElement('button'); copyBtn.textContent='Copy';
+        copyBtn.onclick=()=>{ const ta=document.createElement('textarea'); ta.value=(bub.textContent||"").trim(); document.body.appendChild(ta); ta.select();
+          try{document.execCommand('copy');showToast('Copied');}catch(e){} ta.remove(); };
+        const saveBtn=document.createElement('button'); saveBtn.textContent='Save'; saveBtn.onclick=()=>saveContent('answer');
+        act.appendChild(copyBtn); act.appendChild(saveBtn); meta.appendChild(act); bub.appendChild(meta);
+      }
+      return {row,bub};
+    }
+    function thinkingRow(){ return bubbleRow('bot','Searching… <span class="typing"><span></span><span></span><span></span></span>'); }
+
+    async function sendMessage(){
+      const q=(questionInput.value||'').trim(); if(!q||sending) return;
+      sending=true; sendBtn.disabled=true;
+      ensureChatVisible();
+      bubbleRow('user', toHTML(q)); chatHistory.push({role:'user', content:q});
+      questionInput.value=''; questionInput.style.height='auto';
+      const t = thinkingRow();
+      try{
+        const res = await fetch(`${API_BASE}/chat`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ question:q, history:chatHistory, fail_count:failCount })
+        });
+        const data = await res.json();
+        t.row.remove();
+        bubbleRow('bot', toHTML(data.answer || data.error || 'No response'), data.sources || []);
+        if (data.answer) chatHistory.push({role:'assistant', content:data.answer});
+        lastSources = Array.isArray(data.sources) ? data.sources : [];
+        failCount = data.fail_count || 0;
+      }catch(e){
+        t.row.remove(); bubbleRow('bot','Error connecting to server.'); console.error('Chat error', e);
+      }finally{ sending=false; sendBtn.disabled=false; questionInput.focus(); }
+    }
+
+    // Home cards
+    document.getElementById('cards').addEventListener('click', e=>{
+      const el = e.target.closest('.card'); if(!el) return;
+      questionInput.value = el.getAttribute('data-q') || '';
+      questionInput.dispatchEvent(new Event('input')); sendBtn.click();
+    });
+
+    document.getElementById('newBtn').addEventListener('click', ()=>{
+      chatHistory=[]; failCount=0; lastSources=[]; panel.innerHTML='';
+      home.style.display='block'; panel.style.display='none';
+    });
+
+    // Save (brochure layout; filename = question)
+    async function saveContent(scope='answer'){
+      const fmt = exportFormat.value;
+      let filename='chatbot', payload={ type: fmt };
+      if (scope==='answer' || exportScope.value==='answer'){
+        const answer = lastAnswer(); const question = lastQuestionForLastAnswer();
+        if(!answer){ showToast('No bot answer to save'); return; }
+        filename = sanitizeFilename(question || 'answer');
+        payload = {
+          type: fmt,
+          template: 'brochure',
+          filename,
+          question,
+          answer,
+          sources: lastSources || [],
+          brandTitle: 'Agent42labs Chatbot'
+        };
+      } else {
+        const content = chatHistory.map(m => (m.role==='user'?'You: ':'Bot: ')+(m.content||'')).join('\n');
+        filename = 'conversation_' + ts();
+        payload = { type: fmt, content, filename };
+      }
+      const r = await fetch(`${API_BASE}/export`, {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
+      });
+      if(!r.ok){ showToast('Save failed'); return; }
+      const blob = await r.blob(); const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `${filename}.${fmt}`;
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      showToast('Saved');
+    }
+    exportBtn.addEventListener('click', ()=>saveContent(exportScope.value));
+    clearBtn.addEventListener('click', ()=>{ chatHistory=[]; failCount=0; lastSources=[]; panel.innerHTML=''; showToast('Cleared'); });
+
+    // Input behavior
+    sendBtn.addEventListener('click', sendMessage);
+    questionInput.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }});
+    questionInput.addEventListener('input', ()=>{ questionInput.style.height='auto'; questionInput.style.height=Math.min(100, questionInput.scrollHeight)+'px'; });
+  </script>
+</body>
+</html>

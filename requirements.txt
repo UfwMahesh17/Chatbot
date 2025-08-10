@@ -1,0 +1,13 @@
+flask
+flask-cors
+langchain
+langchain-community
+langchain-cohere
+chromadb
+cohere
+pypdf2
+python-docx
+fpdf
+trafilatura
+requests
+numpy<2
