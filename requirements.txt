@@ -11,3 +11,4 @@ fpdf
 trafilatura
 requests
 numpy<2
+gunicorn
